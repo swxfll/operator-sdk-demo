@@ -1,0 +1,31 @@
+# permissions for end users to edit swxflls.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: swxfll-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: swxfll-operator
+    app.kubernetes.io/part-of: swxfll-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: swxfll-editor-role
+rules:
+- apiGroups:
+  - cache.swxfll.com
+  resources:
+  - swxflls
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cache.swxfll.com
+  resources:
+  - swxflls/status
+  verbs:
+  - get

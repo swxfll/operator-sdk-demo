@@ -1,0 +1,12 @@
+apiVersion: cache.swxfll.com/v1alpha1
+kind: Swxfll
+metadata:
+  labels:
+    app.kubernetes.io/name: swxfll
+    app.kubernetes.io/instance: swxfll-sample
+    app.kubernetes.io/part-of: swxfll-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: swxfll-operator
+  name: swxfll-sample
+spec:
+  # TODO(user): Add fields here

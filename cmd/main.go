@@ -33,6 +33,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	cachev1alpha1 "github.com/swxfll/operator-sdk-demo/api/v1alpha1"
+	"github.com/swxfll/operator-sdk-demo/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -55,6 +58,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	// 用于插入自定义资源的 Scheme 相关的代码。
+	utilruntime.Must(cachev1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -153,6 +157,13 @@ func main() {
 	}
 
 	// 是一种标记，用于告诉 operator-sdk 在生成的代码中插入一些必要的构建器代码。这些构建器代码通常用于创建控制器的主要逻辑。
+	if err = (&controller.SwxfllReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Swxfll")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	// 添加健康探针（Healthz Check）
