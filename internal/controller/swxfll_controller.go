@@ -29,6 +29,7 @@ import (
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"strings"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -199,7 +200,91 @@ func (r *SwxfllReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}, found)
 	if err != nil && apierrors.IsNotFound(err) {
 		// Define a new deployment
-		r.d
+		dep, err := r.deploymentForSwxfll(swxfll)
+		if err != nil {
+			log.Error(err, "无法为 swxfll 定义新的 Deployment 资源")
+
+			// 以下实现将更新状态
+			meta.SetStatusCondition(&swxfll.Status.Conditions,
+				metav1.Condition{
+					Type:   typeAvailableSwxfll,
+					Status: metav1.ConditionFalse,
+					Reason: "Reconciling",
+					Message: fmt.Sprintf("Failed to create Deployment for the custom resource (%s): (%s)",
+						swxfll.Name, err)})
+
+			if err := r.Status().Update(ctx, swxfll); err != nil {
+				log.Error(err, "Failed to update swxfll status")
+				return ctrl.Result{}, err
+			}
+
+			return ctrl.Result{}, err
+		}
+
+		log.Info("Creating a new Deployment",
+			"Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+		if err = r.Create(ctx, dep); err != nil {
+			log.Error(err, "Failed to create new Deployment",
+				"Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+			return ctrl.Result{}, err
+		}
+
+		// Deployment created successfully
+		// We will requeue the reconciliation so that we can ensure the state
+		// and move forward for the next operations
+		return ctrl.Result{RequeueAfter: time.Minute}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get Deployment")
+		// Let's return the error for the reconciliation be re-trigged again
+		return ctrl.Result{}, err
+	}
+
+	// CRD API 定义了 swxfll 类型，具有 swxfll.Size 字段
+	// 用于设置集群中所需状态的 Deployment 实例数量。
+	// 因此，以下代码将确保 Deployment 的大小与正在调和的 Custom Resource 的 Size spec 相同。
+	size := swxfll.Spec.Size
+	if *found.Spec.Replicas != size {
+		found.Spec.Replicas = &size
+		if err = r.Update(ctx, found); err != nil {
+			log.Error(err, "Failed to update Deployment",
+				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+
+			// Re-fetch the memcached Custom Resource before update the status
+			// so that we have the latest state of the resource on the cluster and we will avoid
+			// raise the issue "the object has been modified, please apply
+			// your changes to the latest version and try again" which would re-trigger the reconciliation
+			if err := r.Get(ctx, req.NamespacedName, swxfll); err != nil {
+				log.Error(err, "Failed to re-fetch swxfll")
+				return ctrl.Result{}, err
+			}
+
+			// The following implementation will update the status
+			meta.SetStatusCondition(&swxfll.Status.Conditions, metav1.Condition{Type: typeAvailableSwxfll,
+				Status: metav1.ConditionFalse, Reason: "Resizing",
+				Message: fmt.Sprintf("Failed to update the size for the custom resource (%s): (%s)", swxfll.Name, err)})
+
+			if err := r.Status().Update(ctx, swxfll); err != nil {
+				log.Error(err, "Failed to update Memcached status")
+				return ctrl.Result{}, err
+			}
+
+			return ctrl.Result{}, err
+		}
+
+		// Now, that we update the size we want to requeue the reconciliation
+		// so that we can ensure that we have the latest state of the resource before
+		// update. Also, it will help ensure the desired state on the cluster
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// The following implementation will update the status
+	meta.SetStatusCondition(&swxfll.Status.Conditions, metav1.Condition{Type: typeAvailableSwxfll,
+		Status: metav1.ConditionTrue, Reason: "Reconciling",
+		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", swxfll.Name, size)})
+
+	if err := r.Status().Update(ctx, swxfll); err != nil {
+		log.Error(err, "Failed to update swxfll status")
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil

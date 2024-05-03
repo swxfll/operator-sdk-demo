@@ -160,6 +160,8 @@ func main() {
 	if err = (&controller.SwxfllReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		//此记录器将在控制器的协调方法中使用以发出事件。
+		Recorder: mgr.GetEventRecorderFor("swxfll-controller"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Swxfll")
 		os.Exit(1)
