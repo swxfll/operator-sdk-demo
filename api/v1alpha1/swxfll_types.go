@@ -67,10 +67,10 @@ type SwxfllStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Swxfll is the Schema for the swxflls API
-// 添加以下标记以将状态子资源添加到 CRD 清单，以便控制器可以在不更改 CR 对象的其余部分的情况下更新 CR 状态：
+// Swxfll is the Schema for the swxflls API xxxxxxxxx
 // +kubebuilder:subresource:status
 type Swxfll struct {
+	// 添加以上(+kube*builder:subreso*urce:st*atus)标记以将状态子资源添加到 CRD 清单，以便控制器可以在不更改 CR 对象的其余部分的情况下更新 CR 状态：
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 

@@ -17,8 +17,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Swxfll is the Schema for the swxflls API 添加以下标记以将状态子资源添加到 CRD
-          清单，以便控制器可以在不更改 CR 对象的其余部分的情况下更新 CR 状态：
+        description: Swxfll is the Schema for the swxflls API xxxxxxxxx
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
