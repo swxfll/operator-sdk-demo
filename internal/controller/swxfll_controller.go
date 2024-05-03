@@ -97,8 +97,8 @@ func (r *SwxfllReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		meta.SetStatusCondition(&swxfll.Status.Conditions, metav1.Condition{
 			Type:    typeAvailableSwxfll,
 			Status:  metav1.ConditionUnknown,
-			Reason:  "调和中",
-			Message: "开始调和",
+			Reason:  "Reconciling",
+			Message: "开Starting reconciliation",
 		})
 		if err = r.Status().Update(ctx, swxfll); err != nil {
 			log.Error(err, "无法更新 Swxfll 状态")

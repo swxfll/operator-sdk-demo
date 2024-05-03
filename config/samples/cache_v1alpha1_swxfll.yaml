@@ -10,3 +10,5 @@ metadata:
   name: swxfll-sample
 spec:
   # TODO(user): Add fields here
+  size: 3
+  containerPort: 11211
