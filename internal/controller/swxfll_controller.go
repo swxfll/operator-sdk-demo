@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"strings"
 	"time"
@@ -79,6 +80,7 @@ func (r *SwxfllReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// 获取 Swxfll 实例
 	// 目的是检查集群上是否已应用 Kind 为 Swxfll 的自定义资源
 	// 如果没有应用，则返回 nil 以停止调和过程
+	// 查找此调和请求的 swxfll 实例
 	swxfll := &cachev1alpha1.Swxfll{}
 	err := r.Get(ctx, req.NamespacedName, swxfll)
 	if err != nil {
@@ -438,7 +440,10 @@ func imageForSwxfll() (string, error) {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SwxfllReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// NewControllerManagedBy() 提供了一个控制器生成器，允许各种控制器配置。
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cachev1alpha1.Swxfll{}).
+		Owns(&appsv1.Deployment{}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 2}).
 		Complete(r)
 }
